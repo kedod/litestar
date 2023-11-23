@@ -82,9 +82,7 @@ def get_value_fixture() -> Callable[[Request, str, bool], Awaitable[Any]]:
     async def get_value_(connection: Request, prop_name: str, is_coro: bool) -> Any:
         """Helper to get the value of the tested cached property."""
         value = getattr(connection, prop_name)
-        if is_coro:
-            return await value()
-        return value
+        return await value() if is_coro else value
 
     return get_value_
 
@@ -125,7 +123,7 @@ async def test_connection_cached_properties_no_scope_or_connection_caching(
         For certain properties, we call `get_litestar_scope_state()` twice, once for the property and once for the
         body. For these cases, we check that the mock was called twice.
         """
-        if state_key in ("json", "msgpack"):
+        if state_key in {"json", "msgpack"}:
             get_mock.assert_has_calls([call(state_key), call("body")])
         elif state_key == "form":
             get_mock.assert_has_calls([call(state_key), call("content_type")])
@@ -138,7 +136,7 @@ async def test_connection_cached_properties_no_scope_or_connection_caching(
         For certain properties, we call `set_litestar_scope_state()` twice, once for the property and once for the
         body. For these cases, we check that the mock was called twice.
         """
-        if state_key in ("json", "msgpack"):
+        if state_key in {"json", "msgpack"}:
             set_mock.assert_has_calls([call("body", ANY), call(state_key, ANY)])
         elif state_key == "form":
             set_mock.assert_has_calls([call("content_type", ANY), call("form", ANY)])
