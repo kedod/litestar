@@ -6,10 +6,11 @@ import os
 import subprocess
 import sys
 from contextlib import AbstractContextManager, ExitStack, contextmanager
-from typing import TYPE_CHECKING, Any, Iterator
+from typing import TYPE_CHECKING, Any, Iterator, Optional
 
 import click
 from click import Context, command, option
+from msgspec import UnsetType
 from rich.tree import Tree
 
 from litestar.app import DEFAULT_OPENAPI_CONFIG
@@ -158,6 +159,13 @@ def info_command(app: Litestar) -> None:
     help="If certificate and key are not found at specified locations, create a self-signed certificate and a key",
     is_flag=True,
 )
+@option(
+    "--ws-ping-interval",
+    help="WebSocket ping interval in seconds.",
+    type=Optional[float],
+    default=20.0,
+    show_default=True,
+)
 def run_command(
     reload: bool,
     port: int,
@@ -173,6 +181,7 @@ def run_command(
     ssl_certfile: str | None,
     ssl_keyfile: str | None,
     create_self_signed_cert: bool,
+    ws_ping_interval: float | None,
     ctx: Context,
 ) -> None:
     """Run a Litestar app; requires ``uvicorn``.
@@ -228,6 +237,8 @@ def run_command(
         else validate_ssl_file_paths(ssl_certfile, ssl_keyfile)
     )
 
+    ws_ping_interval = env.ws_ping_interval if env.ws_ping_interval is not UnsetType else ws_ping_interval
+
     console.rule("[yellow]Starting server process", align="left")
 
     show_app_info(app)
@@ -247,6 +258,7 @@ def run_command(
                 factory=env.is_app_factory,
                 ssl_certfile=certfile_path,
                 ssl_keyfile=keyfile_path,
+                ws_ping_interval=ws_ping_interval,
             )
         else:
             # invoke uvicorn in a subprocess to be able to use the --reload flag. see

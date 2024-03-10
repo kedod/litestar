@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Generator, Iterable, Sequence, TypeVar, cast
 
 from click import ClickException, Command, Context, Group, pass_context
+from msgspec import UnsetType
 from rich import get_console
 from rich.table import Table
 from typing_extensions import ParamSpec, get_type_hints
@@ -90,6 +91,7 @@ class LitestarEnv:
     certfile_path: str | None = None
     keyfile_path: str | None = None
     create_self_signed_cert: bool = False
+    ws_ping_interval: float | None | UnsetType = UnsetType
 
     @classmethod
     def from_env(cls, app_path: str | None, app_dir: Path | None = None) -> LitestarEnv:
@@ -122,6 +124,7 @@ class LitestarEnv:
         reload_dirs = tuple(s.strip() for s in getenv("LITESTAR_RELOAD_DIRS", "").split(",") if s) or None
         reload_include = tuple(s.strip() for s in getenv("LITESTAR_RELOAD_INCLUDES", "").split(",") if s) or None
         reload_exclude = tuple(s.strip() for s in getenv("LITESTAR_RELOAD_EXCLUDES", "").split(",") if s) or None
+        ws_ping_interval = getenv("LITESTAR_WS_PING_INTERVAL", UnsetType)
 
         return cls(
             app_path=loaded_app.app_path,
@@ -141,6 +144,7 @@ class LitestarEnv:
             certfile_path=getenv("LITESTAR_SSL_CERT_PATH"),
             keyfile_path=getenv("LITESTAR_SSL_KEY_PATH"),
             create_self_signed_cert=_bool_from_env("LITESTAR_CREATE_SELF_SIGNED_CERT"),
+            ws_ping_interval=float(ws_ping_interval) if ws_ping_interval not in {UnsetType, None} else ws_ping_interval,
         )
 
 
